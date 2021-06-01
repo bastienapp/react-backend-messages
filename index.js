@@ -1,8 +1,10 @@
 const express = require('express');
 require('dotenv').config();
-var cors = require('cors');
+const cors = require('cors');
+const messagesRouter = require('./routes/messages');
 const app = express();
-const pool = require('./config/mysql');
+
+app.use(express.json());
 
 const port = process.env.PORT || 8000;
 
@@ -12,15 +14,7 @@ app.use(
   })
 );
 
-app.get('/messages', function (request, response) {
-  pool.query('SELECT * FROM message', (error, results) => {
-    if (error) {
-      response.status(500).send(error);
-    } else {
-      response.send(results);
-    }
-  });
-});
+app.use('/messages', messagesRouter);
 
 app.listen(port, () => {
   console.log(`Listen on port ${port}`);
