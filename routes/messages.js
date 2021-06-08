@@ -2,6 +2,10 @@ var express = require('express');
 var router = express.Router();
 const pool = require('../config/mysql');
 
+// query : /messages?sort=asc > trier ou filtrer
+// params : /messages/:id > sélection
+// body : corps attaché à la requête : { id: 1, content: 'it works' } > créer ou mettre à jour
+
 // findAll
 router.get('/', function (request, response) {
   pool.query('SELECT * FROM message', (error, results) => {
@@ -27,9 +31,6 @@ router.get('/:id', function (request, response) {
   });
 });
 
-// query : /messages?sort=asc > trier ou filtrer
-// params : /messages/:id > sélection
-// body : corps attaché à la requête : { id: 1, content: 'it works' } > créer ou mettre à jour
 // create
 router.post('/', (request, response) => {
   const message = request.body;
@@ -50,7 +51,43 @@ router.post('/', (request, response) => {
 });
 
 // TODO update
+router.put('/:id', (request, response) => {
+  // query : '/messages/1?content=tacos
+  // params : '/messages/1/tacos
+  // body : '/messages/1' body: {message: 'tacos'}
+  const { content } = request.body;
+  const id = request.params.id;
+  pool.query(
+    'UPDATE message SET content = ? WHERE id = ?',
+    [content, id],
+    (error, results) => {
+      if (error) {
+        response.status(500).send(error);
+      } else {
+        if (results.affectedRows > 0) {
+          response.status(202).send({ id: id, content: content });
+        } else {
+          response.sendStatus(404);
+        }
+      }
+    }
+  );
+});
 
 // TODO delete
+router.delete('/:id', (request, response) => {
+  const id = request.params.id;
+  pool.query('DELETE FROM message WHERE id = ?', [id], (error, results) => {
+    if (error) {
+      response.status(500).send(error);
+    } else {
+      if (results.affectedRows > 0) {
+        response.sendStatus(204);
+      } else {
+        response.status(404).send({ error: `no message with id ${id}` });
+      }
+    }
+  });
+});
 
 module.exports = router;
